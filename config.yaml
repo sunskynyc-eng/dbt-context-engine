@@ -1,0 +1,33 @@
+# config.yaml
+# All configuration for dbt-context-engine.
+
+# --- Database connection ---
+database:
+  type: duckdb                          # duckdb / snowflake / bigquery / postgres
+  path: /path/to/your/database.duckdb  # DuckDB only — path to the .duckdb file
+
+# --- dbt project ---
+dbt:
+  project_dir: /path/to/your/dbt/project  # directory containing dbt_project.yml
+  profiles_dir: ~/.dbt                     # directory containing profiles.yml
+  target: dev                              # dbt target to use
+
+# --- Collection settings ---
+collection:
+  sample_rows: 20          # number of rows to sample per table
+  max_distinct_values: 50  # max distinct values to collect for categorical columns
+  skip_schemas:            # schemas to ignore during collection
+    - information_schema
+    - pg_catalog
+
+# --- LLM settings ---
+llm:
+  model: claude-sonnet-4-20250514  # Anthropic model to use
+  max_tokens: 1000                  # max tokens per inference call
+  # API key is read from environment variable ANTHROPIC_API_KEY
+  # Never store API keys in this file
+
+# --- Output settings ---
+output:
+  snapshots_dir: snapshots/    # where to write snapshot files
+  format: text                 # text / json

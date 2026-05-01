@@ -3,8 +3,6 @@ dbt-duckdb
 sqlalchemy
 chromadb
 anthropic
-pypdf
-python-docx
 tiktoken
 sentence-transformers
 click
