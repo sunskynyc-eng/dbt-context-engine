@@ -1,0 +1,14 @@
+dbt-core
+dbt-duckdb
+sqlalchemy
+chromadb
+anthropic
+pypdf
+python-docx
+tiktoken
+sentence-transformers
+click
+pytest
+black
+ruff
+sqlglot
