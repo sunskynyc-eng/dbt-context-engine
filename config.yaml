@@ -14,9 +14,10 @@ dbt:
 
 # --- Collection settings ---
 collection:
-  sample_rows: 20          # number of rows to sample per table
-  max_distinct_values: 50  # max distinct values to collect for categorical columns
-  skip_schemas:            # schemas to ignore during collection
+  sample_percentage: 1.0    # percentage of rows to sample per table
+  min_sample_rows: 20       # never sample fewer than this
+  max_sample_rows: 1000     # never sample more than this
+  skip_schemas:             # schemas to ignore during collection
     - information_schema
     - pg_catalog
 
