@@ -1,13 +1,16 @@
 # base_parser.py
 # Abstract base class for all dbt artifact parsers.
 # Handles hash-based change detection and JSON caching.
-# Subclasses implement _cache_name and _parse_file only.
+# Subclasses implement _cache_name, _preprocess, and _parse_file only.
 #
 # Pattern: Template Method
 # parse() owns the algorithm — check hash, load cache or parse, save
 # Subclasses implement the file-specific parsing logic only
 #
 # Caller is responsible for passing paths — BaseParser does not read config
+#
+# Memory note: _preprocess reduces raw JSON before parsing
+# ijson streaming is not used in this iteration — see DESIGN.md
 
 import json
 import os
@@ -45,17 +48,27 @@ class BaseParser(ABC):
         pass
 
     @abstractmethod
+    def _preprocess(self, data: dict) -> dict:
+        # receives full raw JSON loaded from source file
+        # returns reduced dictionary containing only fields needed
+        # keeps memory usage low for large artifact files
+        # e.g. ManifestParser keeps only 'nodes' and 'child_map'
+        pass
+
+    @abstractmethod
     def _parse_file(self, data: dict) -> dict:
-        # receives raw loaded JSON
-        # returns extracted structured data
+        # receives preprocessed reduced dictionary from _preprocess
+        # returns extracted structured data ready for caching
         pass
 
     def parse(self) -> dict:
         # Final method — do not override in subclasses
-        # Override _parse_file() instead
+        # Override _preprocess() and _parse_file() instead
         if not has_file_changed(self.source_path, self.hash_path):
             return self.__load_cache()
-        result = self._parse_file(self.__load_source())
+        raw = self.__load_source()
+        preprocessed = self._preprocess(raw)    # reduce before parsing
+        result = self._parse_file(preprocessed)
         save_file_hash(self.source_path, self.hash_path)
         self.__save_cache(result)
         return result
