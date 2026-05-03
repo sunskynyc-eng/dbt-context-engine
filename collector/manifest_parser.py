@@ -23,14 +23,26 @@ class ManifestParser(BaseParser):
     def _preprocess(self, data: dict) -> dict:
         # keep only model nodes — discard tests, seeds, snapshots,
         # exposures, macros. reduces memory before parsing.
-        # keep child_map for downstream count calculation
+        # keep child_map filtered to model-to-model relationships only
+        model_keys = {
+            key for key, node in data.get('nodes', {}).items()
+            if node.get('resource_type') == 'model'
+        }
+
         return {
             'nodes': {
                 key: node
                 for key, node in data.get('nodes', {}).items()
-                if node.get('resource_type') == 'model'
+                if key in model_keys
             },
-            'child_map': data.get('child_map', {})
+            'child_map': {
+                key: [
+                    child for child in children
+                    if child.startswith('model.')
+                ]
+                for key, children in data.get('child_map', {}).items()
+                if key in model_keys
+            }
         }
 
     def _parse_file(self, data: dict) -> dict:
