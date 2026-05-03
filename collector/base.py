@@ -175,19 +175,13 @@ class BaseCollector(ABC):
     ) -> List[Dict[str, Any]]:
         pass
 
-    def collect_all(self) -> Dict[str, Any]:
+    def collect_all(self) -> List[TableMetadata]:
         # Orchestrates full collection — fail loudly on connection failure
         if not self.test_connection():
             raise ConnectionError(
                 f"Cannot connect to {self.connection_string}"
             )
-        metadata = self.collect_metadata()
-        return {
-            'tables': metadata,
-            'schema_count': len(set(t.schema for t in metadata)),
-            'table_count': len(metadata),
-            'dbt_model_count': sum(1 for t in metadata if t.is_dbt_model)
-        }
+        return self.collect_metadata()
 
     def __repr__(self) -> str:
         # Returns actual subclass name e.g. DuckDBCollector(connected=True)
