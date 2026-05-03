@@ -169,10 +169,10 @@ class BaseCollector(ABC):
     @abstractmethod
     def collect_samples(
         self,
-        table_name: str,
-        n: int = 20  # default 20 rows per table
+        schema_name: str,       # required — no default
+        table_name: str,        # required — no default
+        n: int = 20             # optional — has default
     ) -> List[Dict[str, Any]]:
-        # Pull sample rows — returns list of row dicts {column_name: value}
         pass
 
     def collect_all(self) -> Dict[str, Any]:
