@@ -60,7 +60,7 @@ class Merger:
 
             if manifest_entry:
                 # table exists in database and manifest — dbt model
-                table = self._enrich_dbt_model(
+                self._enrich_dbt_model(
                     table,
                     manifest_entry,
                     catalog_entry,
@@ -89,7 +89,7 @@ class Merger:
         manifest_entry: Dict[str, Any],
         catalog_entry: Optional[Dict[str, Any]],
         run_results_entry: Optional[Dict[str, Any]]
-    ) -> TableMetadata:
+    ) -> None:
         # mark as dbt model
         table.is_dbt_model = True
 
@@ -134,10 +134,6 @@ class Merger:
             table.dbt_refresh_duration_seconds = run_results_entry.get(
                 'refresh_duration_seconds'
             )
-        elif catalog_entry:
-            # catalog does not provide last_refreshed directly
-            # left as None if run_results not available
-            pass
 
         # --- column enrichment ---
         manifest_col_descriptions = manifest_entry.get(
@@ -159,5 +155,3 @@ class Merger:
             # only fill in from catalog if dtype is empty
             if not col.dtype and col.name in catalog_columns:
                 col.dtype = catalog_columns[col.name].get('type', '')
-
-        return table
