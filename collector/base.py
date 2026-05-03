@@ -6,7 +6,10 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .sample_store import SampleStore
 
 
 @dataclass
@@ -162,8 +165,12 @@ class BaseCollector(ABC):
         pass
 
     @abstractmethod
-    def collect_metadata(self) -> List[TableMetadata]:
-        # Extract table and column structure — no data values
+    def collect_metadata(
+        self,
+        sample_store: 'SampleStore'
+    ) -> List[TableMetadata]:
+        # Extract table and column structure
+        # Write samples to sample_store during collection
         pass
 
     @abstractmethod
@@ -175,13 +182,16 @@ class BaseCollector(ABC):
     ) -> List[Dict[str, Any]]:
         pass
 
-    def collect_all(self) -> List[TableMetadata]:
+    def collect_all(
+        self,
+        sample_store: 'SampleStore'
+    ) -> List[TableMetadata]:
         # Orchestrates full collection — fail loudly on connection failure
         if not self.test_connection():
             raise ConnectionError(
                 f"Cannot connect to {self.connection_string}"
             )
-        return self.collect_metadata()
+        return self.collect_metadata(sample_store)
 
     def __repr__(self) -> str:
         # Returns actual subclass name e.g. DuckDBCollector(connected=True)

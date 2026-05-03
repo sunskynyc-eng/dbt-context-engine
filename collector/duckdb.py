@@ -10,6 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy import inspect, text
 
 from .base import BaseCollector, TableMetadata, ColumnMetadata
+from .sample_store import SampleStore
 from .utils import calculate_sample_size
 
 logger = logging.getLogger(__name__)
@@ -40,7 +41,10 @@ class DuckDBCollector(BaseCollector):
             logger.error(f"Connection failed: {e}")
             return False
 
-    def collect_metadata(self) -> List[TableMetadata]:
+    def collect_metadata(
+        self,
+        sample_store: SampleStore
+    ) -> List[TableMetadata]:
         # check connection before proceeding
         if not self._connected:
             raise ConnectionError(
@@ -110,12 +114,14 @@ class DuckDBCollector(BaseCollector):
                     # calculate percentage based sample size
                     sample_size = calculate_sample_size(row_count)
 
-                    # get sample rows
+                    # collect samples and write to store
+                    # samples written to temp files — not kept in memory
                     samples = self.collect_samples(
                         schema_name=schema_name,
                         table_name=table_name,
                         n=sample_size
                     )
+                    sample_store.write(schema_name, table_name, samples)
 
                     tables.append(TableMetadata(
                         name=table_name,
@@ -129,7 +135,7 @@ class DuckDBCollector(BaseCollector):
                         f"{schema_name}.{table_name}: "
                         f"{len(columns)} columns, "
                         f"{row_count} rows, "
-                        f"{len(samples)} samples"
+                        f"{len(samples)} samples written to store"
                     )
 
                 except Exception as e:
@@ -181,6 +187,7 @@ class DuckDBCollector(BaseCollector):
         # Snowflake: information_schema.tables.row_count
         # PostgreSQL: pg_class.reltuples
         # BigQuery: INFORMATION_SCHEMA.TABLE_STORAGE.row_count
+        
         try:
             with self._engine.connect() as conn:
                 result = conn.execute(
@@ -190,9 +197,11 @@ class DuckDBCollector(BaseCollector):
                     )
                 )
                 return result.scalar()
+        
         except Exception as e:
             logger.error(
                 f"Failed to get row count for "
                 f"{schema_name}.{table_name}: {e}"
             )
+        
             return 0
