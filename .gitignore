@@ -208,3 +208,9 @@ __marimo__/
 
 # VS Code settings — local to this machine, not shared
 .vscode/
+
+# One-time setup script
+setup_structure.sh
+
+# Cache directory
+cache/
