@@ -184,8 +184,8 @@ class BaseCollector(ABC):
         metadata = self.collect_metadata()
         return {
             'tables': metadata,
+            'schema_count': len(set(t.schema for t in metadata)),
             'table_count': len(metadata),
-            'total_columns': sum(len(t.columns) for t in metadata),
             'dbt_model_count': sum(1 for t in metadata if t.is_dbt_model)
         }
 
