@@ -32,3 +32,26 @@ llm:
 output:
   snapshots_dir: snapshots/    # where to write snapshot files
   format: text                 # text / json
+
+# --- Importance ranking ---
+importance_ranking:
+
+  # weights across three dimensions — must sum to 1.0
+  weights:
+    reliability: 0.4    # test coverage, documentation, freshness
+    usage:       0.4    # query frequency, downstream count, exposures
+    scale:       0.2    # row count, rows added, refresh duration
+
+  # dbt models score higher than raw tables by default
+  # added to final score after dimension weighting
+  dbt_model_bonus: 0.1
+
+  # freshness decay — applied as multiplier to reliability score
+  # None timestamp — no penalty applied, returns 1.0
+  freshness_decay:
+    under_24h:   1.0    # refreshed today — full reliability score
+    under_7d:    0.9    # refreshed this week — minimal penalty
+    under_30d:   0.7    # refreshed this month — moderate penalty
+    under_90d:   0.5    # refreshed this quarter — significant penalty
+    under_365d:  0.2    # refreshed this year — heavy penalty
+    over_365d:   0.0    # not refreshed in over a year — zeroed out
