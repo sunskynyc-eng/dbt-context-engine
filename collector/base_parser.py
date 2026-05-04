@@ -64,7 +64,10 @@ class BaseParser(ABC):
     def parse(self) -> dict:
         # Final method — do not override in subclasses
         # Override _preprocess() and _parse_file() instead
-        if not has_file_changed(self.source_path, self.hash_path):
+        # check both hash and cache file exist before using cache
+        # cache file may have been deleted manually while hash remains
+        if (not has_file_changed(self.source_path, self.hash_path)
+                and os.path.exists(self.cache_path)):
             return self.__load_cache()
         raw = self.__load_source()
         preprocessed = self._preprocess(raw)    # reduce before parsing
