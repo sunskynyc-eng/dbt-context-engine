@@ -13,6 +13,7 @@
 #   rows_added         → RunResults only
 #   tags, owner        → Manifest only
 #   test results       → RunResults only
+#   exposure_count     → Manifest only
 #
 # Handles three cases:
 #   1. Table in database and manifest — dbt model
@@ -104,7 +105,8 @@ class Merger:
         )
         table.dbt_upstream_count = manifest_entry.get('upstream_count')
         table.dbt_downstream_count = manifest_entry.get('downstream_count')
-
+        table.dbt_exposure_count = manifest_entry.get('exposure_count')
+        
         # --- materialization: catalog > manifest ---
         if catalog_entry:
             table.dbt_materialization = catalog_entry.get(

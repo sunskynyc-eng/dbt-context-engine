@@ -126,6 +126,7 @@ class TableMetadata:
     # Relationships — high downstream count signals critical infrastructure
     dbt_upstream_count: Optional[int] = None
     dbt_downstream_count: Optional[int] = None
+    dbt_exposure_count: Optional[int] = None    # number of exposures referencing this model
 
     # Business context — requires human annotation, cannot be inferred
     dbt_business_owner: Optional[str] = None
