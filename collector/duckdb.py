@@ -4,7 +4,7 @@
 # Production databases use their own collector subclass.
 
 import logging
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 import sqlalchemy as sa
 from sqlalchemy import inspect, text
@@ -205,3 +205,26 @@ class DuckDBCollector(BaseCollector):
             )
         
             return 0
+        
+    def _get_last_modified(
+        self,
+        schema_name: str,
+        table_name: str
+    ) -> Optional[str]:
+        # DuckDB does not expose per-table DML timestamps natively
+        # file modification time used as proxy for local development
+        # at scale use database-specific metadata:
+        # Snowflake: information_schema.tables.last_altered
+        # BigQuery:  INFORMATION_SCHEMA.TABLE_STORAGE.last_modified_time
+        # PostgreSQL: pg_stat_user_tables.last_autoanalyze
+        try:
+            import os
+            from datetime import datetime
+            mtime = os.path.getmtime(self.database_path)
+            return datetime.fromtimestamp(mtime).isoformat()
+        except Exception as e:
+            logger.error(
+                f"Failed to get last modified for "
+                f"{schema_name}.{table_name}: {e}"
+            )
+            return None    

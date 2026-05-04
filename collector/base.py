@@ -108,6 +108,12 @@ class TableMetadata:
     dbt_last_refreshed: Optional[str] = None
     dbt_rows_added_last_refresh: Optional[int] = None   # incremental batch size for incremental models
     dbt_refresh_duration_seconds: Optional[float] = None
+    # last DML timestamp — for raw tables replaces dbt_last_refreshed
+    # DuckDB: file modification time proxy
+    # Snowflake: information_schema.tables.last_altered
+    # BigQuery: INFORMATION_SCHEMA.TABLE_STORAGE.last_modified_time
+    # PostgreSQL: pg_stat_user_tables.last_autoanalyze
+    last_modified: Optional[str] = None
 
     # Data quality — from run_results.json test results
     dbt_tests_defined: Optional[int] = None
