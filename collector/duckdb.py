@@ -4,6 +4,8 @@
 # Production databases use their own collector subclass.
 
 import logging
+import os
+from datetime import datetime
 from typing import List, Dict, Any, Optional
 
 import sqlalchemy as sa
@@ -125,10 +127,13 @@ class DuckDBCollector(BaseCollector):
 
                     tables.append(TableMetadata(
                         name=table_name,
-                        schema=schema_name,  # derived not hardcoded
+                        schema=schema_name,
                         row_count=row_count,
                         columns=columns,
-                        is_dbt_model=False  # merger sets this later
+                        is_dbt_model=False,  # merger sets this later
+                        last_modified=self._get_last_modified(
+                            schema_name, table_name
+                        )
                     ))
 
                     logger.info(
@@ -218,8 +223,6 @@ class DuckDBCollector(BaseCollector):
         # BigQuery:  INFORMATION_SCHEMA.TABLE_STORAGE.last_modified_time
         # PostgreSQL: pg_stat_user_tables.last_autoanalyze
         try:
-            import os
-            from datetime import datetime
             mtime = os.path.getmtime(self.database_path)
             return datetime.fromtimestamp(mtime).isoformat()
         except Exception as e:
@@ -227,4 +230,4 @@ class DuckDBCollector(BaseCollector):
                 f"Failed to get last modified for "
                 f"{schema_name}.{table_name}: {e}"
             )
-            return None    
+            return None
