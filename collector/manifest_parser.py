@@ -22,13 +22,16 @@ class ManifestParser(BaseParser):
         return 'manifest'
 
     def _preprocess(self, data: dict) -> dict:
-        # keep only model nodes — discard tests, seeds, snapshots,
-        # exposures, macros. reduces memory before parsing.
-        # keep child_map filtered to model-to-model relationships only
-        # keep exposures for exposure count calculation
         model_keys = {
             key for key, node in data.get('nodes', {}).items()
             if node.get('resource_type') == 'model'
+        }
+
+        # keep test nodes to count tests per model
+        test_nodes = {
+            key: node
+            for key, node in data.get('nodes', {}).items()
+            if node.get('resource_type') == 'test'
         }
 
         return {
@@ -45,7 +48,8 @@ class ManifestParser(BaseParser):
                 for key, children in data.get('child_map', {}).items()
                 if key in model_keys
             },
-            'exposures': data.get('exposures', {})
+            'exposures': data.get('exposures', {}),
+            'test_nodes': test_nodes   
         }
 
     def _parse_file(self, data: dict) -> dict:
@@ -69,6 +73,18 @@ class ManifestParser(BaseParser):
                         exposure.get('name', '')
                     )
 
+        # build test count lookup — model name → number of tests defined
+        test_nodes = data.get('test_nodes', {})
+        test_count_lookup: Dict[str, int] = {}
+        for test_node in test_nodes.values():
+            for node_ref in test_node.get(
+                'depends_on', {}
+            ).get('nodes', []):
+                if node_ref.startswith('model.'):
+                    model_name = node_ref.split('.')[-1]
+                    test_count_lookup[model_name] = (
+                        test_count_lookup.get(model_name, 0) + 1
+                    )
         for key, node in nodes.items():
             model_name = node['name']
             logger.info(f"Parsing manifest node: {model_name}")
@@ -129,6 +145,7 @@ class ManifestParser(BaseParser):
                 'downstream_count': downstream_count,
                 'exposure_count': len(model_exposures),
                 'exposures': model_exposures,
+                'tests_defined': test_count_lookup.get(model_name, 0),
             }
 
         logger.info(f"Parsed {len(models)} models from manifest")

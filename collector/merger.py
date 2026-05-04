@@ -11,8 +11,8 @@
 #   schema             → DuckDBCollector > Catalog > None
 #   last_refreshed     → RunResults > Catalog > None
 #   rows_added         → RunResults only
-#   tags, owner        → Manifest only
-#   test results       → RunResults only
+#   dbt_tests_defined  → Manifest only
+#   dbt_tests_passing  → RunResults only
 #   exposure_count     → Manifest only
 #
 # Handles three cases:
@@ -106,6 +106,7 @@ class Merger:
         table.dbt_upstream_count = manifest_entry.get('upstream_count')
         table.dbt_downstream_count = manifest_entry.get('downstream_count')
         table.dbt_exposure_count = manifest_entry.get('exposure_count')
+        table.dbt_tests_defined = manifest_entry.get('tests_defined')
         
         # --- materialization: catalog > manifest ---
         if catalog_entry:
@@ -135,6 +136,9 @@ class Merger:
             )
             table.dbt_refresh_duration_seconds = run_results_entry.get(
                 'refresh_duration_seconds'
+            )
+            table.dbt_tests_passing = run_results_entry.get(
+                'tests_passing'
             )
 
         # --- column enrichment ---
