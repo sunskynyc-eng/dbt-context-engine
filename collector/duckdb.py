@@ -192,7 +192,6 @@ class DuckDBCollector(BaseCollector):
         # Snowflake: information_schema.tables.row_count
         # PostgreSQL: pg_class.reltuples
         # BigQuery: INFORMATION_SCHEMA.TABLE_STORAGE.row_count
-        
         try:
             with self._engine.connect() as conn:
                 result = conn.execute(
@@ -202,13 +201,11 @@ class DuckDBCollector(BaseCollector):
                     )
                 )
                 return result.scalar()
-        
         except Exception as e:
             logger.error(
                 f"Failed to get row count for "
                 f"{schema_name}.{table_name}: {e}"
             )
-        
             return 0
         
     def _get_last_modified(
