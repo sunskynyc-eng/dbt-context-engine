@@ -22,6 +22,11 @@ class ManifestParser(BaseParser):
         return 'manifest'
 
     def _preprocess(self, data: dict) -> dict:
+        # keep only model nodes — discard tests, seeds, snapshots,
+        # exposures, macros. reduces memory before parsing.
+        # keep child_map filtered to model-to-model relationships only
+        # keep test nodes to count tests defined per model
+        # keep exposures for exposure count calculation
         model_keys = {
             key for key, node in data.get('nodes', {}).items()
             if node.get('resource_type') == 'model'
