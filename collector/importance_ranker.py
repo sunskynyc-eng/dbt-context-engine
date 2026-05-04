@@ -132,8 +132,8 @@ class ImportanceRanker:
         scored.sort(key=lambda x: x[0].overall, reverse=True)
 
         # assign ranks
-        for rank, (score, table) in enumerate(scored, start=1):
-            score.rank = rank
+        for position, (score, table) in enumerate(scored, start=1):
+            score.rank = position
 
         logger.info(f"Ranked {len(scored)} tables")
         return scored
