@@ -93,21 +93,22 @@ class ImportanceRanker:
         ]
 
         # collect query signals
+        # keyed by (name, schema) tuple to handle same table name across schemas
         query_data = {}
         for table in tables:
             counts = self.query_tracker.get_counts(
                 table.name, table.schema
             )
-            query_data[table.name] = counts
+            query_data[(table.name, table.schema)] = counts
 
         all_7d = [
-            query_data[t.name]['avg_queries_7d']
-            if query_data[t.name] else 0.0
+            query_data[(t.name, t.schema)]['avg_queries_7d']
+            if query_data[(t.name, t.schema)] else 0.0
             for t in tables
         ]
         all_30d = [
-            query_data[t.name]['avg_queries_30d']
-            if query_data[t.name] else 0.0
+            query_data[(t.name, t.schema)]['avg_queries_30d']
+            if query_data[(t.name, t.schema)] else 0.0
             for t in tables
         ]
 
@@ -116,7 +117,7 @@ class ImportanceRanker:
         for table in tables:
             score = self._score_table(
                 table=table,
-                query_counts=query_data.get(table.name),
+                query_counts=query_data.get((table.name, table.schema)),
                 all_row_counts=all_row_counts,
                 all_downstream=all_downstream,
                 all_exposure=all_exposure,
