@@ -64,6 +64,18 @@ class ImportanceRanker:
             'over_365d':   decay_cfg.get('over_365d', 0.0)
         }
 
+        # gating thresholds from config
+        gating_cfg = ranking_cfg.get('gating', {})
+        self.gate_no_description_no_tests = gating_cfg.get(
+            'no_description_no_tests_cap', 0.2
+        )
+        self.gate_failing_tests = gating_cfg.get(
+            'failing_tests_cap', 0.3
+        )
+        self.gate_stale_model = gating_cfg.get(
+            'stale_model_cap', 0.1
+        )
+
         self.query_tracker = query_tracker
 
     def rank(
@@ -242,6 +254,33 @@ class ImportanceRanker:
         # dbt model bonus
         if table.is_dbt_model:
             overall = min(1.0, overall + self.dbt_model_bonus)
+
+        # --- gating rules ---
+        # models that fail key thresholds cannot rank highly
+        # regardless of other signals — prevents unreliable models
+        # from appearing at the top of retrieval results
+
+        # gate 1: black box — no description and no tests
+        if (
+            table.is_dbt_model
+            and not table.dbt_has_description
+            and not table.dbt_tests_defined
+        ):
+            overall = min(overall, self.gate_no_description_no_tests)
+
+        # gate 2: failing tests — data cannot be trusted
+        if (
+            table.is_dbt_model
+            and table.dbt_tests_defined
+            and table.dbt_tests_defined > 0
+            and table.dbt_tests_passing is not None
+            and table.dbt_tests_passing < table.dbt_tests_defined
+        ):
+            overall = min(overall, self.gate_failing_tests)
+
+        # gate 3: stale model — not refreshed in over a year
+        if freshness_decay == 0.0:
+            overall = min(overall, self.gate_stale_model)
 
         return ImportanceScore(
             reliability=round(reliability, 4),

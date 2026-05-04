@@ -55,3 +55,10 @@ importance_ranking:
     under_90d:   0.5    # refreshed this quarter — significant penalty
     under_365d:  0.2    # refreshed this year — heavy penalty
     over_365d:   0.0    # not refreshed in over a year — zeroed out
+
+  # gating rules — models below these thresholds are capped
+  # regardless of other signals
+  gating:
+    no_description_no_tests_cap: 0.2   # black box models
+    failing_tests_cap:           0.3   # untrustworthy models
+    stale_model_cap:             0.1   # not refreshed in over a year
