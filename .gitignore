@@ -214,5 +214,5 @@ setup_structure.sh
 
 # Cache directory
 config.local.yaml
-snapshots/
+snapshots/[0-9]*/
 cache/
