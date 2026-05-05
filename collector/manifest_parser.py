@@ -11,6 +11,7 @@
 #
 
 import json
+import re
 import logging
 import os
 from typing import Dict, List
@@ -193,6 +194,23 @@ class ManifestParser(BaseParser):
 
         result = {}
         for test_key, test_node in test_nodes.items():
+            # prefer test_metadata.kwargs.model — explicitly set by dbt
+            # this is the model the test was defined on
+            # more reliable than depends_on.nodes which includes
+            # referenced models for relationship tests
+            kwargs_model = test_node.get(
+                'test_metadata', {}
+            ).get('kwargs', {}).get('model', '')
+            if kwargs_model:
+                # kwargs model is e.g.
+                # "{{ get_where_subquery(ref('orders')) }}"
+                # extract model name using string search for ref('...')
+                match = re.search(r"ref\('(\w+)'\)", kwargs_model)
+                if match:
+                    result[test_key] = match.group(1)
+                    continue
+
+            # fallback to depends_on.nodes if kwargs.model not present
             for node_ref in test_node.get(
                 'depends_on', {}
             ).get('nodes', []):
