@@ -14,12 +14,34 @@ dbt:
 
 # --- Collection settings ---
 collection:
-  sample_percentage: 1.0    # percentage of rows to sample per table
-  min_sample_rows: 20       # never sample fewer than this
-  max_sample_rows: 1000     # never sample more than this
-  skip_schemas:             # schemas to ignore during collection
+  sample_percentage: 1.0      # percentage of rows to sample per table
+  min_sample_rows: 20         # never sample fewer than this
+  max_sample_rows: 1000       # never sample more than this
+
+  # schema filtering
+  # if include_schemas is set only these schemas are collected
+  # takes priority over skip_schemas and skip_schema_patterns
+  include_schemas: []
+
+  # schemas to always skip regardless of other settings
+  skip_schemas:
     - information_schema
     - pg_catalog
+
+  # wildcard patterns to skip — supports * wildcard
+  # handles personal, test, and CI schemas at scale
+  skip_schema_patterns:
+    - "*_dev"
+    - "*_test"
+    - "*_sandbox"
+    - "*_scratch"
+    - "pr_*"
+    - "dbt_cloud_*"
+
+  # skip schemas where schema name matches owner name
+  # detects personal development schemas in Snowflake and BigQuery
+  # not implemented for DuckDB — ignored in local development
+  skip_owner_schemas: true
 
 # --- LLM settings ---
 llm:
@@ -30,8 +52,9 @@ llm:
 
 # --- Output settings ---
 output:
-  snapshots_dir: snapshots/    # where to write snapshot files
-  format: text                 # text / json
+  snapshots_dir: snapshots/
+  format: text                # text / json
+  keep_last_n_runs: 3        # number of collection runs to retain
 
 # --- Importance ranking ---
 importance_ranking:
