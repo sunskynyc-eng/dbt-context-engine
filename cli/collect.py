@@ -110,7 +110,32 @@ def run(config_path: str) -> None:
         logger.info("Parsing dbt artifacts")
         manifest_data = manifest_parser.parse()
         catalog_data = catalog_parser.parse()
-        run_results_data = run_results_parser.parse()
+        run_results_result = run_results_parser.parse()
+
+        # run_results returns models and raw test statuses separately
+        run_results_data = run_results_result['models']
+        test_statuses = run_results_result['test_results']
+
+        # build test unique_id → model name lookup from manifest
+        test_node_to_model = manifest_parser.get_test_node_to_model()
+
+        # fix tests_passing using manifest test→model mapping
+        # run_results unique_ids end with a hash not a model name
+        # manifest is the only source that maps test→model correctly
+        for test_unique_id, status in test_statuses.items():
+            model_name = test_node_to_model.get(test_unique_id)
+            if model_name and status == 'success':
+                if model_name in run_results_data:
+                    run_results_data[model_name]['tests_passing'] = (
+                        run_results_data[model_name].get(
+                            'tests_passing', 0
+                        ) + 1
+                    )
+
+        logger.info(
+            f"Resolved tests_passing for "
+            f"{len(test_node_to_model)} tests"
+        )
 
         # merge
         logger.info("Merging sources")

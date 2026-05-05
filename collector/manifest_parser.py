@@ -8,6 +8,7 @@
 #
 # _preprocess filters to model nodes only, keeps child_map and exposures
 # _parse_file extracts model metadata and builds exposure lookup
+#
 
 import json
 import logging
@@ -29,6 +30,7 @@ class ManifestParser(BaseParser):
         # keep child_map filtered to model-to-model relationships only
         # keep test nodes to count tests defined per model
         # keep exposures for exposure count calculation
+
         model_keys = {
             key for key, node in data.get('nodes', {}).items()
             if node.get('resource_type') == 'model'
@@ -56,7 +58,7 @@ class ManifestParser(BaseParser):
                 if key in model_keys
             },
             'exposures': data.get('exposures', {}),
-            'test_nodes': test_nodes   
+            'test_nodes': test_nodes
         }
 
     def _parse_file(self, data: dict) -> dict:
@@ -92,6 +94,7 @@ class ManifestParser(BaseParser):
                     test_count_lookup[model_name] = (
                         test_count_lookup.get(model_name, 0) + 1
                     )
+
         for key, node in nodes.items():
             model_name = node['name']
             logger.info(f"Parsing manifest node: {model_name}")
@@ -156,6 +159,7 @@ class ManifestParser(BaseParser):
             }
 
         logger.info(f"Parsed {len(models)} models from manifest")
+
         # save test nodes to separate cache for get_test_node_to_model
         # stored separately to keep parse() output structure unchanged
         test_nodes_cache_path = os.path.join(
@@ -166,8 +170,8 @@ class ManifestParser(BaseParser):
             json.dump(test_nodes, f)
 
         return models
-    
-def get_test_node_to_model(self) -> dict:
+
+    def get_test_node_to_model(self) -> dict:
         # returns test unique_id → model name lookup
         # built from manifest test nodes via depends_on.nodes
         # parse() must be called before this method
@@ -188,7 +192,6 @@ def get_test_node_to_model(self) -> dict:
             test_nodes = json.load(f)
 
         result = {}
-        
         for test_key, test_node in test_nodes.items():
             for node_ref in test_node.get(
                 'depends_on', {}
@@ -202,5 +205,4 @@ def get_test_node_to_model(self) -> dict:
             f"Built test_node_to_model mapping "
             f"for {len(result)} tests"
         )
-
         return result

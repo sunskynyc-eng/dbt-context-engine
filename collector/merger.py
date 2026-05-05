@@ -7,7 +7,7 @@
 #   column description → Manifest > Catalog > None
 #   model description  → Manifest only
 #   lineage            → Manifest only
-#   materialization    → Catalog > Manifest > None
+#   materialization    → Manifest > Catalog > None
 #   schema             → DuckDBCollector > Catalog > None
 #   last_refreshed     → RunResults > Catalog > None
 #   rows_added         → RunResults only
@@ -108,16 +108,17 @@ class Merger:
         table.dbt_exposure_count = manifest_entry.get('exposure_count')
         table.dbt_tests_defined = manifest_entry.get('tests_defined')
         
-        # --- materialization: catalog > manifest ---
-        if catalog_entry:
-            table.dbt_materialization = catalog_entry.get(
-                'materialization'
-            ) or manifest_entry.get('materialization')
-        else:
-            table.dbt_materialization = manifest_entry.get(
-                'materialization'
-            )
-
+        # --- materialization: manifest > catalog ---
+        # manifest materialization is the dbt type — table, view,
+        # incremental, ephemeral. catalog returns database type —
+        # BASE TABLE, VIEW — which is less specific.
+        # manifest wins for materialization.
+        table.dbt_materialization = (
+            manifest_entry.get('materialization')
+            or catalog_entry.get('materialization')
+            if catalog_entry else
+            manifest_entry.get('materialization')
+        )
         # --- row_count: DuckDBCollector > catalog ---
         # DuckDBCollector row_count is set during collect_metadata
         # only fall back to catalog if collector returned 0
