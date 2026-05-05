@@ -1,0 +1,69 @@
+================================================================
+TABLE:      orders
+SCHEMA:     main
+SOURCE:     dbt model
+RANK:       2 of 5
+IMPORTANCE: 0.3000
+  reliability: 0.6000
+  usage:       0.0500
+  scale:       0.2500
+  freshness:   1.0000
+================================================================
+
+IDENTITY
+  materialization:  BASE TABLE
+  owner:            unknown
+  tags:             none
+  last_refreshed:   2026-05-05T19:54:14.968637Z
+  refresh_duration: 0.00 seconds
+
+DESCRIPTION
+  This table has basic information about orders, as well as some derived facts based on payments
+
+QUALITY
+  tests:            10 defined, 0 passing
+  documented:       100.0% columns
+  has_description:  yes
+
+RELATIONSHIPS
+  upstream:         2 models
+  downstream:       0 models
+  exposures:        0
+  lineage (immediate upstream): stg_orders, stg_payments
+
+COLUMNS
+  name                           type                 flags
+  ----------------------------------------------------------------
+  order_id                       INTEGER              
+  customer_id                    INTEGER              
+  order_date                     DATE                 
+  status                         VARCHAR              
+  credit_card_amount             DOUBLE               
+  coupon_amount                  DOUBLE               
+  bank_transfer_amount           DOUBLE               
+  gift_card_amount               DOUBLE               
+  amount                         DOUBLE               
+
+COLUMN DESCRIPTIONS
+  order_id: This is a unique identifier for an order
+  customer_id: Foreign key to the customers table
+  order_date: Date (UTC) that the order was placed
+  status: Orders can be one of the following statuses:
+
+| status         | description                                                                                                            |
+|----------------|------------------------------------------------------------------------------------------------------------------------|
+| placed         | The order has been placed but has not yet left the warehouse                                                           |
+| shipped        | The order has ben shipped to the customer and is currently in transit                                                  |
+| completed      | The order has been received by the customer                                                                            |
+| return_pending | The customer has indicated that they would like to return the order, but it has not yet been received at the warehouse |
+| returned       | The order has been returned by the customer and received at the warehouse                                              |
+  credit_card_amount: Amount of the order (AUD) paid for by credit card
+  coupon_amount: Amount of the order (AUD) paid for by coupon
+  bank_transfer_amount: Amount of the order (AUD) paid for by bank transfer
+  gift_card_amount: Amount of the order (AUD) paid for by gift card
+  amount: Total amount (AUD) of the order
+
+SAMPLE DATA
+  no sample data available
+
+================================================================

@@ -39,12 +39,28 @@ logger = logging.getLogger(__name__)
 
 
 def load_config(config_path: str) -> dict:
-    # reads yaml config file and returns as dictionary
+    # loads base config.yaml then merges local config on top
+    # local config contains machine-specific paths only
+    # base config contains all shared settings
+    base_path = os.path.join(
+        os.path.dirname(os.path.abspath(config_path)),
+        'config.yaml'
+    )
+    if not os.path.exists(base_path):
+        logger.error(f"Base config not found: {base_path}")
+        sys.exit(1)
+    with open(base_path, 'r') as f:
+        base = yaml.safe_load(f)
+
     if not os.path.exists(config_path):
-        logger.error(f"Config file not found: {config_path}")
+        logger.error(f"Local config not found: {config_path}")
         sys.exit(1)
     with open(config_path, 'r') as f:
-        return yaml.safe_load(f)
+        local = yaml.safe_load(f)
+
+    # merge local on top of base — local wins on conflict
+    base.update(local)
+    return base
 
 
 def run(config_path: str) -> None:

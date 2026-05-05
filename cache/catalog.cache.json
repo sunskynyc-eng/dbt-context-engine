@@ -1,0 +1,145 @@
+{
+  "customers": {
+    "row_count": null,
+    "materialization": "BASE TABLE",
+    "schema": "main",
+    "columns": {
+      "customer_id": {
+        "type": "INTEGER",
+        "description": ""
+      },
+      "first_name": {
+        "type": "VARCHAR",
+        "description": ""
+      },
+      "last_name": {
+        "type": "VARCHAR",
+        "description": ""
+      },
+      "first_order": {
+        "type": "DATE",
+        "description": ""
+      },
+      "most_recent_order": {
+        "type": "DATE",
+        "description": ""
+      },
+      "number_of_orders": {
+        "type": "BIGINT",
+        "description": ""
+      },
+      "customer_lifetime_value": {
+        "type": "DOUBLE",
+        "description": ""
+      }
+    }
+  },
+  "orders": {
+    "row_count": null,
+    "materialization": "BASE TABLE",
+    "schema": "main",
+    "columns": {
+      "order_id": {
+        "type": "INTEGER",
+        "description": ""
+      },
+      "customer_id": {
+        "type": "INTEGER",
+        "description": ""
+      },
+      "order_date": {
+        "type": "DATE",
+        "description": ""
+      },
+      "status": {
+        "type": "VARCHAR",
+        "description": ""
+      },
+      "credit_card_amount": {
+        "type": "DOUBLE",
+        "description": ""
+      },
+      "coupon_amount": {
+        "type": "DOUBLE",
+        "description": ""
+      },
+      "bank_transfer_amount": {
+        "type": "DOUBLE",
+        "description": ""
+      },
+      "gift_card_amount": {
+        "type": "DOUBLE",
+        "description": ""
+      },
+      "amount": {
+        "type": "DOUBLE",
+        "description": ""
+      }
+    }
+  },
+  "stg_customers": {
+    "row_count": null,
+    "materialization": "VIEW",
+    "schema": "main",
+    "columns": {
+      "customer_id": {
+        "type": "INTEGER",
+        "description": ""
+      },
+      "first_name": {
+        "type": "VARCHAR",
+        "description": ""
+      },
+      "last_name": {
+        "type": "VARCHAR",
+        "description": ""
+      }
+    }
+  },
+  "stg_orders": {
+    "row_count": null,
+    "materialization": "VIEW",
+    "schema": "main",
+    "columns": {
+      "order_id": {
+        "type": "INTEGER",
+        "description": ""
+      },
+      "customer_id": {
+        "type": "INTEGER",
+        "description": ""
+      },
+      "order_date": {
+        "type": "DATE",
+        "description": ""
+      },
+      "status": {
+        "type": "VARCHAR",
+        "description": ""
+      }
+    }
+  },
+  "stg_payments": {
+    "row_count": null,
+    "materialization": "VIEW",
+    "schema": "main",
+    "columns": {
+      "payment_id": {
+        "type": "INTEGER",
+        "description": ""
+      },
+      "order_id": {
+        "type": "INTEGER",
+        "description": ""
+      },
+      "payment_method": {
+        "type": "VARCHAR",
+        "description": ""
+      },
+      "amount": {
+        "type": "DOUBLE",
+        "description": ""
+      }
+    }
+  }
+}

@@ -8,12 +8,8 @@
 # At 1000 tables with 1000 rows per table samples can exceed
 # available memory. Temp files keep memory usage constant
 # regardless of project size.
-#
-# Usage:
-#   with SampleStore() as store:
-#       store.write('main', 'orders', samples)
-#       samples = store.read('main', 'orders')
 
+import shutil
 import json
 import os
 import tempfile
@@ -69,7 +65,7 @@ class SampleStore:
 
         try:
             with open(file_path, 'w') as f:
-                json.dump(samples, f)
+                json.dump(samples, f, default=str)
             self._file_map[key] = file_path
             logger.info(
                 f"Wrote {len(samples)} samples for {key}"
@@ -121,7 +117,7 @@ class SampleStore:
                 )
 
         try:
-            os.rmdir(self._temp_dir)
+            shutil.rmtree(self._temp_dir)
             logger.info(
                 f"Sample store cleaned up: {self._temp_dir}"
             )

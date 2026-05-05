@@ -1,0 +1,56 @@
+================================================================
+TABLE:      customers
+SCHEMA:     main
+SOURCE:     dbt model
+RANK:       1 of 5
+IMPORTANCE: 0.3000
+  reliability: 0.6000
+  usage:       0.0500
+  scale:       0.3286
+  freshness:   1.0000
+================================================================
+
+IDENTITY
+  materialization:  BASE TABLE
+  owner:            unknown
+  tags:             none
+  last_refreshed:   2026-05-05T19:54:14.966674Z
+  refresh_duration: 0.00 seconds
+
+DESCRIPTION
+  This table has basic information about a customer, as well as some derived facts based on a customer's orders
+
+QUALITY
+  tests:            3 defined, 0 passing
+  documented:       100.0% columns
+  has_description:  yes
+
+RELATIONSHIPS
+  upstream:         3 models
+  downstream:       0 models
+  exposures:        0
+  lineage (immediate upstream): stg_customers, stg_orders, stg_payments
+
+COLUMNS
+  name                           type                 flags
+  ----------------------------------------------------------------
+  customer_id                    INTEGER              
+  first_name                     VARCHAR              
+  last_name                      VARCHAR              
+  first_order                    DATE                 
+  most_recent_order              DATE                 
+  number_of_orders               BIGINT               
+  customer_lifetime_value        DOUBLE               
+
+COLUMN DESCRIPTIONS
+  customer_id: This is a unique identifier for a customer
+  first_name: Customer's first name. PII.
+  last_name: Customer's last name. PII.
+  first_order: Date (UTC) of a customer's first order
+  most_recent_order: Date (UTC) of a customer's most recent order
+  number_of_orders: Count of the number of orders a customer has placed
+
+SAMPLE DATA
+  no sample data available
+
+================================================================

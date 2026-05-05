@@ -1,0 +1,79 @@
+================================================================
+TABLE:      customers
+SCHEMA:     main
+SOURCE:     dbt model
+RANK:       1 of 5
+IMPORTANCE: 0.3000
+  reliability: 0.6000
+  usage:       0.0500
+  scale:       0.3286
+  freshness:   1.0000
+================================================================
+
+IDENTITY
+  materialization:  BASE TABLE
+  owner:            unknown
+  tags:             none
+  last_refreshed:   2026-05-05T19:54:14.966674Z
+  refresh_duration: 0.00 seconds
+
+DESCRIPTION
+  This table has basic information about a customer, as well as some derived facts based on a customer's orders
+
+QUALITY
+  tests:            3 defined, 0 passing
+  documented:       100.0% columns
+  has_description:  yes
+
+RELATIONSHIPS
+  upstream:         3 models
+  downstream:       0 models
+  exposures:        0
+  lineage (immediate upstream): stg_customers, stg_orders, stg_payments
+
+COLUMNS
+  name                           type                 flags
+  ----------------------------------------------------------------
+  customer_id                    INTEGER              
+  first_name                     VARCHAR              
+  last_name                      VARCHAR              
+  first_order                    DATE                 
+  most_recent_order              DATE                 
+  number_of_orders               BIGINT               
+  customer_lifetime_value        DOUBLE               
+
+COLUMN DESCRIPTIONS
+  customer_id: This is a unique identifier for a customer
+  first_name: Customer's first name. PII.
+  last_name: Customer's last name. PII.
+  first_order: Date (UTC) of a customer's first order
+  most_recent_order: Date (UTC) of a customer's most recent order
+  number_of_orders: Count of the number of orders a customer has placed
+
+SAMPLE DATA
+  rows shown: 20 of 100
+  ----------------------------------------------------------------
+  customer_id | first_name | last_name | first_order | most_recent_order | number_of_orders | customer_lifetime_value
+  ----------------------------------------------------------------
+  1           | Michael    | P.        | 2018-01-01  | 2018-02-10        | 2                | 33.0                   
+  2           | Shawn      | M.        | 2018-01-11  | 2018-01-11        | 1                | 23.0                   
+  3           | Kathleen   | P.        | 2018-01-02  | 2018-03-11        | 3                | 65.0                   
+  6           | Sarah      | R.        | 2018-02-19  | 2018-02-19        | 1                | 8.0                    
+  7           | Martin     | M.        | 2018-01-14  | 2018-01-14        | 1                | 26.0                   
+  8           | Frank      | R.        | 2018-01-29  | 2018-03-12        | 2                | 45.0                   
+  9           | Jennifer   | F.        | 2018-03-17  | 2018-03-17        | 1                | 30.0                   
+  11          | Fred       | S.        | 2018-03-23  | 2018-03-23        | 1                | 3.0                    
+  12          | Amy        | D.        | 2018-03-03  | 2018-03-03        | 1                | 4.0                    
+  13          | Kathleen   | M.        | 2018-03-07  | 2018-03-07        | 1                | 26.0                   
+  16          | Amanda     | H.        | 2018-02-02  | 2018-02-02        | 1                | 12.0                   
+  18          | Johnny     | K.        | 2018-02-27  | 2018-02-27        | 1                | 29.0                   
+  19          | Virginia   | F.        | 2018-03-16  | 2018-03-16        | 1                | 3.0                    
+  20          | Anna       | A.        | 2018-01-23  | 2018-01-23        | 1                | 15.0                   
+  21          | Willie     | H.        | 2018-03-28  | 2018-03-28        | 1                | 22.0                   
+  22          | Sean       | H.        | 2018-01-26  | 2018-03-01        | 3                | 52.0                   
+  25          | Victor     | H.        | 2018-01-17  | 2018-03-20        | 2                | 24.0                   
+  26          | Aaron      | R.        | 2018-02-11  | 2018-03-08        | 2                | 8.0                    
+  27          | Benjamin   | B.        | 2018-02-21  | 2018-04-04        | 2                | 27.0                   
+  28          | Lisa       | W.        | 2018-02-04  | 2018-02-04        | 1                | 3.0                    
+
+================================================================

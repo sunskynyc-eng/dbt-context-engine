@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import List, Dict, Any, Optional
 
 import sqlalchemy as sa
-from sqlalchemy import inspect, text
+from sqlalchemy import text
 
 from .base import BaseCollector, TableMetadata, ColumnMetadata
 from .sample_store import SampleStore
@@ -51,102 +51,144 @@ class DuckDBCollector(BaseCollector):
             )
 
         tables = []
-        inspector = inspect(self._engine)
 
-        for schema_name in inspector.get_schema_names():
-            # skip system schemas
-            if self._should_skip_schema(schema_name):
-                continue
+        with self._engine.connect() as conn:
+            # get all schemas from DuckDB information_schema
+            schemas = conn.execute(text("""
+                SELECT DISTINCT table_schema
+                FROM information_schema.tables
+                WHERE table_type = 'BASE TABLE'
+            """)).fetchall()
 
-            logger.info(f"Collecting schema: {schema_name}")
+            for (schema_name,) in schemas:
+                if self._should_skip_schema(schema_name):
+                    continue
 
-            for table_name in inspector.get_table_names(
-                schema=schema_name
-            ):
-                logger.info(
-                    f"Collecting: {schema_name}.{table_name}"
-                )
+                logger.info(f"Collecting schema: {schema_name}")
 
-                try:
-                    # build primary key set
-                    pk_columns = set(
-                        inspector.get_pk_constraint(
-                            table_name,
-                            schema=schema_name
-                        ).get('constrained_columns', [])
+                # get all tables in schema
+                table_names = conn.execute(text("""
+                    SELECT table_name
+                    FROM information_schema.tables
+                    WHERE table_schema = :schema
+                    AND table_type = 'BASE TABLE'
+                    ORDER BY table_name
+                """), {'schema': schema_name}).fetchall()
+
+                for (table_name,) in table_names:
+                    logger.info(
+                        f"Collecting: {schema_name}.{table_name}"
                     )
+                    try:
+                        # get column info
+                        col_rows = conn.execute(text("""
+                            SELECT
+                                column_name,
+                                data_type,
+                                is_nullable
+                            FROM information_schema.columns
+                            WHERE table_schema = :schema
+                            AND table_name = :table
+                            ORDER BY ordinal_position
+                        """), {
+                            'schema': schema_name,
+                            'table': table_name
+                        }).fetchall()
 
-                    # build foreign key lookup
-                    fk_lookup = {}
-                    for fk in inspector.get_foreign_keys(
-                        table_name,
-                        schema=schema_name
-                    ):
-                        for col in fk['constrained_columns']:
-                            referred_table = fk['referred_table']
-                            referred_col = fk['referred_columns'][0]
-                            fk_lookup[col] = (
-                                f"{referred_table}.{referred_col}"
-                            )
+                        # get primary keys
+                        pk_rows = conn.execute(text("""
+                            SELECT kcu.column_name
+                            FROM information_schema.table_constraints tc
+                            JOIN information_schema.key_column_usage kcu
+                                ON tc.constraint_name = kcu.constraint_name
+                                AND tc.table_schema = kcu.table_schema
+                            WHERE tc.constraint_type = 'PRIMARY KEY'
+                            AND tc.table_schema = :schema
+                            AND tc.table_name = :table
+                        """), {
+                            'schema': schema_name,
+                            'table': table_name
+                        }).fetchall()
+                        pk_columns = {row[0] for row in pk_rows}
 
-                    # build column metadata
-                    columns = []
-                    for col in inspector.get_columns(
-                        table_name,
-                        schema=schema_name
-                    ):
-                        col_name = col['name']
-                        columns.append(ColumnMetadata(
-                            name=col_name,
-                            dtype=str(col['type']),
-                            nullable=col.get('nullable', True),
-                            is_primary_key=col_name in pk_columns,
-                            is_foreign_key=col_name in fk_lookup,
-                            foreign_key_ref=fk_lookup.get(col_name)
-                        ))
+                        # get foreign keys
+                        fk_rows = conn.execute(text("""
+                            SELECT
+                                kcu.column_name,
+                                ccu.table_name AS referred_table,
+                                ccu.column_name AS referred_column
+                            FROM information_schema.table_constraints tc
+                            JOIN information_schema.key_column_usage kcu
+                                ON tc.constraint_name = kcu.constraint_name
+                                AND tc.table_schema = kcu.table_schema
+                            JOIN information_schema.constraint_column_usage ccu
+                                ON ccu.constraint_name = tc.constraint_name
+                            WHERE tc.constraint_type = 'FOREIGN KEY'
+                            AND tc.table_schema = :schema
+                            AND tc.table_name = :table
+                        """), {
+                            'schema': schema_name,
+                            'table': table_name
+                        }).fetchall()
+                        fk_lookup = {
+                            row[0]: f"{row[1]}.{row[2]}"
+                            for row in fk_rows
+                        }
 
-                    # get row count
-                    row_count = self._get_row_count(
-                        schema_name, table_name
-                    )
+                        # build column metadata
+                        columns = []
+                        for col_name, data_type, is_nullable in col_rows:
+                            columns.append(ColumnMetadata(
+                                name=col_name,
+                                dtype=data_type,
+                                nullable=is_nullable == 'YES',
+                                is_primary_key=col_name in pk_columns,
+                                is_foreign_key=col_name in fk_lookup,
+                                foreign_key_ref=fk_lookup.get(col_name)
+                            ))
 
-                    # calculate percentage based sample size
-                    sample_size = calculate_sample_size(row_count)
-
-                    # collect samples and write to store
-                    # samples written to temp files — not kept in memory
-                    samples = self.collect_samples(
-                        schema_name=schema_name,
-                        table_name=table_name,
-                        n=sample_size
-                    )
-                    sample_store.write(schema_name, table_name, samples)
-
-                    tables.append(TableMetadata(
-                        name=table_name,
-                        schema=schema_name,
-                        row_count=row_count,
-                        columns=columns,
-                        is_dbt_model=False,  # merger sets this later
-                        last_modified=self._get_last_modified(
+                        # get row count
+                        row_count = self._get_row_count(
                             schema_name, table_name
                         )
-                    ))
 
-                    logger.info(
-                        f"{schema_name}.{table_name}: "
-                        f"{len(columns)} columns, "
-                        f"{row_count} rows, "
-                        f"{len(samples)} samples written to store"
-                    )
+                        # calculate sample size
+                        sample_size = calculate_sample_size(row_count)
 
-                except Exception as e:
-                    # one table failing does not crash the whole collection
-                    logger.error(
-                        f"Failed to collect "
-                        f"{schema_name}.{table_name}: {e}"
-                    )
-                    continue
+                        # collect samples
+                        samples = self.collect_samples(
+                            schema_name=schema_name,
+                            table_name=table_name,
+                            n=sample_size
+                        )
+                        sample_store.write(
+                            schema_name, table_name, samples
+                        )
+
+                        tables.append(TableMetadata(
+                            name=table_name,
+                            schema=schema_name,
+                            row_count=row_count,
+                            columns=columns,
+                            is_dbt_model=False,
+                            last_modified=self._get_last_modified(
+                                schema_name, table_name
+                            )
+                        ))
+
+                        logger.info(
+                            f"{schema_name}.{table_name}: "
+                            f"{len(columns)} columns, "
+                            f"{row_count} rows, "
+                            f"{len(samples)} samples written to store"
+                        )
+
+                    except Exception as e:
+                        logger.error(
+                            f"Failed to collect "
+                            f"{schema_name}.{table_name}: {e}"
+                        )
+                        continue
 
         logger.info(f"Collection complete: {len(tables)} tables")
         return tables

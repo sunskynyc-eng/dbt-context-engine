@@ -1,0 +1,110 @@
+{
+  "customers": {
+    "description": "This table has basic information about a customer, as well as some derived facts based on a customer's orders",
+    "lineage": [
+      "stg_customers",
+      "stg_orders",
+      "stg_payments"
+    ],
+    "materialization": "table",
+    "owner": "",
+    "tags": [],
+    "column_descriptions": {
+      "customer_id": "This is a unique identifier for a customer",
+      "first_name": "Customer's first name. PII.",
+      "last_name": "Customer's last name. PII.",
+      "first_order": "Date (UTC) of a customer's first order",
+      "most_recent_order": "Date (UTC) of a customer's most recent order",
+      "number_of_orders": "Count of the number of orders a customer has placed",
+      "total_order_amount": "Total value (AUD) of a customer's orders"
+    },
+    "has_description": true,
+    "columns_documented_pct": 100.0,
+    "upstream_count": 3,
+    "downstream_count": 0,
+    "exposure_count": 0,
+    "exposures": [],
+    "tests_defined": 3
+  },
+  "orders": {
+    "description": "This table has basic information about orders, as well as some derived facts based on payments",
+    "lineage": [
+      "stg_orders",
+      "stg_payments"
+    ],
+    "materialization": "table",
+    "owner": "",
+    "tags": [],
+    "column_descriptions": {
+      "order_id": "This is a unique identifier for an order",
+      "customer_id": "Foreign key to the customers table",
+      "order_date": "Date (UTC) that the order was placed",
+      "status": "Orders can be one of the following statuses:\n\n| status         | description                                                                                                            |\n|----------------|------------------------------------------------------------------------------------------------------------------------|\n| placed         | The order has been placed but has not yet left the warehouse                                                           |\n| shipped        | The order has ben shipped to the customer and is currently in transit                                                  |\n| completed      | The order has been received by the customer                                                                            |\n| return_pending | The customer has indicated that they would like to return the order, but it has not yet been received at the warehouse |\n| returned       | The order has been returned by the customer and received at the warehouse                                              |",
+      "amount": "Total amount (AUD) of the order",
+      "credit_card_amount": "Amount of the order (AUD) paid for by credit card",
+      "coupon_amount": "Amount of the order (AUD) paid for by coupon",
+      "bank_transfer_amount": "Amount of the order (AUD) paid for by bank transfer",
+      "gift_card_amount": "Amount of the order (AUD) paid for by gift card"
+    },
+    "has_description": true,
+    "columns_documented_pct": 100.0,
+    "upstream_count": 2,
+    "downstream_count": 0,
+    "exposure_count": 0,
+    "exposures": [],
+    "tests_defined": 10
+  },
+  "stg_customers": {
+    "description": "",
+    "lineage": [],
+    "materialization": "view",
+    "owner": "",
+    "tags": [],
+    "column_descriptions": {
+      "customer_id": ""
+    },
+    "has_description": false,
+    "columns_documented_pct": 0.0,
+    "upstream_count": 0,
+    "downstream_count": 1,
+    "exposure_count": 0,
+    "exposures": [],
+    "tests_defined": 2
+  },
+  "stg_payments": {
+    "description": "",
+    "lineage": [],
+    "materialization": "view",
+    "owner": "",
+    "tags": [],
+    "column_descriptions": {
+      "payment_id": "",
+      "payment_method": ""
+    },
+    "has_description": false,
+    "columns_documented_pct": 0.0,
+    "upstream_count": 0,
+    "downstream_count": 2,
+    "exposure_count": 0,
+    "exposures": [],
+    "tests_defined": 3
+  },
+  "stg_orders": {
+    "description": "",
+    "lineage": [],
+    "materialization": "view",
+    "owner": "",
+    "tags": [],
+    "column_descriptions": {
+      "order_id": "",
+      "status": ""
+    },
+    "has_description": false,
+    "columns_documented_pct": 0.0,
+    "upstream_count": 0,
+    "downstream_count": 2,
+    "exposure_count": 0,
+    "exposures": [],
+    "tests_defined": 3
+  }
+}
