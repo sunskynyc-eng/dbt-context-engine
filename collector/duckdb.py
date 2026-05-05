@@ -17,17 +17,14 @@ from .utils import calculate_sample_size
 
 logger = logging.getLogger(__name__)
 
-# schemas to skip during collection — contain database internals not user data
-SKIP_SCHEMAS = {'information_schema', 'pg_catalog'}
-
 
 class DuckDBCollector(BaseCollector):
 
     def __init__(self, database_path: str, config: dict):
-            connection_string = f"duckdb:///{database_path}"
-            super().__init__(connection_string, config)
-            self.database_path = database_path
-            self._engine = None
+        connection_string = f"duckdb:///{database_path}"
+        super().__init__(connection_string, config)
+        self.database_path = database_path
+        self._engine = None
 
     def test_connection(self) -> bool:
         try:
@@ -58,7 +55,7 @@ class DuckDBCollector(BaseCollector):
 
         for schema_name in inspector.get_schema_names():
             # skip system schemas
-            if schema_name in SKIP_SCHEMAS:
+            if self._should_skip_schema(schema_name):
                 continue
 
             logger.info(f"Collecting schema: {schema_name}")
@@ -207,7 +204,7 @@ class DuckDBCollector(BaseCollector):
                 f"{schema_name}.{table_name}: {e}"
             )
             return 0
-        
+
     def _get_last_modified(
         self,
         schema_name: str,

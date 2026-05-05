@@ -213,4 +213,4 @@ __marimo__/
 setup_structure.sh
 
 # Cache directory
-cache/
+config.local.yaml
