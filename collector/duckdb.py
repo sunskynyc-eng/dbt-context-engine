@@ -23,11 +23,11 @@ SKIP_SCHEMAS = {'information_schema', 'pg_catalog'}
 
 class DuckDBCollector(BaseCollector):
 
-    def __init__(self, database_path: str):
-        connection_string = f"duckdb:///{database_path}"
-        super().__init__(connection_string)
-        self.database_path = database_path
-        self._engine = None
+    def __init__(self, database_path: str, config: dict):
+            connection_string = f"duckdb:///{database_path}"
+            super().__init__(connection_string, config)
+            self.database_path = database_path
+            self._engine = None
 
     def test_connection(self) -> bool:
         try:
