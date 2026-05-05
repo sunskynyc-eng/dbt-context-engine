@@ -4,6 +4,7 @@
 # every database collector must implement.
 # Supports: DuckDB, Snowflake, BigQuery, Postgres, and any SQLAlchemy-compatible database.
 
+import fnmatch
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any, TYPE_CHECKING
@@ -162,9 +163,21 @@ class BaseCollector(ABC):
     # Abstract base — interface is fixed, implementation varies per database
     # Pattern: Template Method — collect_all defines the algorithm, subclasses implement steps
 
-    def __init__(self, connection_string: str):
+    def __init__(self, connection_string: str, config: dict):
         self.connection_string = connection_string
         self._connected = False  # internal state — do not set externally
+
+        # schema filtering — read from config at construction time
+        # no defaults in code — all filtering defined in config.yaml
+        collection_cfg = config.get('collection', {})
+        self.include_schemas = collection_cfg.get('include_schemas')
+        self.skip_schemas = set(
+            collection_cfg.get('skip_schemas') or []
+        )
+        self.skip_schema_patterns = (
+            collection_cfg.get('skip_schema_patterns') or []
+        )
+        self.skip_owner_schemas = collection_cfg.get('skip_owner_schemas')
 
     @abstractmethod
     def test_connection(self) -> bool:
@@ -199,6 +212,20 @@ class BaseCollector(ABC):
                 f"Cannot connect to {self.connection_string}"
             )
         return self.collect_metadata(sample_store)
+
+    def _should_skip_schema(self, schema_name: str) -> bool:
+        # default implementation — allowlist, explicit skip, pattern matching
+        # override in subclasses to add owner-based filtering
+        # e.g. SnowflakeCollector checks schema_name == schema_owner
+        # all filtering config comes from config.yaml — nothing hardcoded here
+        if self.include_schemas:
+            return schema_name not in self.include_schemas
+        if schema_name in self.skip_schemas:
+            return True
+        return any(
+            fnmatch.fnmatch(schema_name, pattern)
+            for pattern in self.skip_schema_patterns
+        )
 
     def __repr__(self) -> str:
         # Returns actual subclass name e.g. DuckDBCollector(connected=True)
