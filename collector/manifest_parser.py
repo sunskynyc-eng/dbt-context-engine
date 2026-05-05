@@ -9,7 +9,9 @@
 # _preprocess filters to model nodes only, keeps child_map and exposures
 # _parse_file extracts model metadata and builds exposure lookup
 
+import json
 import logging
+import os
 from typing import Dict, List
 from .base_parser import BaseParser
 
@@ -154,4 +156,51 @@ class ManifestParser(BaseParser):
             }
 
         logger.info(f"Parsed {len(models)} models from manifest")
+        # save test nodes to separate cache for get_test_node_to_model
+        # stored separately to keep parse() output structure unchanged
+        test_nodes_cache_path = os.path.join(
+            self.cache_dir, 'manifest_test_nodes.cache.json'
+        )
+        os.makedirs(self.cache_dir, exist_ok=True)
+        with open(test_nodes_cache_path, 'w') as f:
+            json.dump(test_nodes, f)
+
         return models
+    
+def get_test_node_to_model(self) -> dict:
+        # returns test unique_id → model name lookup
+        # built from manifest test nodes via depends_on.nodes
+        # parse() must be called before this method
+        # e.g.:
+        #   'test.jaffle_shop.not_null_orders_order_id.cf6c17daed'
+        #   → 'orders'
+        test_nodes_cache_path = os.path.join(
+            self.cache_dir, 'manifest_test_nodes.cache.json'
+        )
+        if not os.path.exists(test_nodes_cache_path):
+            logger.warning(
+                "Test nodes cache not found. "
+                "Call parse() before get_test_node_to_model()."
+            )
+            return {}
+
+        with open(test_nodes_cache_path, 'r') as f:
+            test_nodes = json.load(f)
+
+        result = {}
+        
+        for test_key, test_node in test_nodes.items():
+            for node_ref in test_node.get(
+                'depends_on', {}
+            ).get('nodes', []):
+                if node_ref.startswith('model.'):
+                    model_name = node_ref.split('.')[-1]
+                    result[test_key] = model_name
+                    break
+
+        logger.info(
+            f"Built test_node_to_model mapping "
+            f"for {len(result)} tests"
+        )
+
+        return result
