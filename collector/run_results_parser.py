@@ -25,6 +25,8 @@ class RunResultsParser(BaseParser):
     def _preprocess(self, data: dict) -> dict:
         # keep model results and test results separately
         # seed results discarded — not needed
+        # test results stored by full unique_id — model name extracted
+        # in cli/collect.py using manifest test_node_to_model lookup
         return {
             'results': [
                 result for result in data.get('results', [])
@@ -42,24 +44,17 @@ class RunResultsParser(BaseParser):
         results = data.get('results', [])
         generated_at = data.get('metadata', {}).get('generated_at', '')
 
-        # build passing test count lookup — model name → passing test count
-        # test unique_id format: test.project.test_name.model_name
-        # depends_on not available in run_results — parse model name from unique_id
+        # store raw test statuses keyed by full unique_id
+        # model name extraction happens in cli/collect.py
+        # using manifest test_node_to_model lookup
+        # this avoids the fragile parts[-1] hash extraction
         test_results = data.get('test_results', [])
-        tests_passing_lookup: Dict[str, int] = {}
+        test_statuses: Dict[str, str] = {}
         for test_result in test_results:
-            if test_result.get('status') != 'pass':
-                continue
-            # extract model name from test unique_id
-            # e.g. 'test.jaffle_shop.unique_orders_order_id.orders'
-            # last segment is the model name
             unique_id = test_result.get('unique_id', '')
-            parts = unique_id.split('.')
-            if len(parts) >= 4:
-                model_name = parts[-1]
-                tests_passing_lookup[model_name] = (
-                    tests_passing_lookup.get(model_name, 0) + 1
-                )
+            status = test_result.get('status', '')
+            if unique_id:
+                test_statuses[unique_id] = status
         for result in results:
             unique_id = result.get('unique_id', '')
 
@@ -113,17 +108,21 @@ class RunResultsParser(BaseParser):
 
             # execution status
             status = result.get('status', '')
-
             run_results[model_name] = {
                 'last_refreshed': last_refreshed or generated_at,
                 'refresh_duration_seconds': duration_seconds,
                 'rows_added': rows_affected,
                 'status': status,
-                'tests_passing': tests_passing_lookup.get(model_name, 0),
+                'tests_passing': 0,  # populated by cli/collect.py
             }
 
         logger.info(
             f"Parsed {len(run_results)} model results "
             f"from run_results.json"
         )
-        return run_results
+        # return both model results and raw test statuses
+        # test statuses keyed by full unique_id for cross-reference
+        return {
+            'models': run_results,
+            'test_results': test_statuses
+        }
