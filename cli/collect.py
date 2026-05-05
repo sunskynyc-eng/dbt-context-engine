@@ -19,8 +19,6 @@ import logging
 import os
 import sys
 import yaml
-
-from collector.base import TableMetadata
 from collector.duckdb import DuckDBCollector
 from collector.manifest_parser import ManifestParser
 from collector.catalog_parser import CatalogParser
@@ -63,7 +61,7 @@ def load_config(config_path: str) -> dict:
     return base
 
 
-def run(config_path: str) -> None:
+def run(config_path: str, force: bool = False) -> None:
     # orchestrates the full collection pipeline
     logger.info(f"Loading config from {config_path}")
     cfg = load_config(config_path)
@@ -79,6 +77,15 @@ def run(config_path: str) -> None:
     # --- ensure directories exist ---
     os.makedirs(cache_dir, exist_ok=True)
     os.makedirs(snapshots_dir, exist_ok=True)
+
+    # --- clear cache if force flag set ---
+    if force:
+        logger.info("Force flag set — clearing all cache files")
+        for filename in os.listdir(cache_dir):
+            if filename.endswith('.cache.json') or filename.endswith('.hash'):
+                file_path = os.path.join(cache_dir, filename)
+                os.remove(file_path)
+                logger.info(f"Deleted cache file: {filename}")
 
     # --- collector ---
     logger.info(f"Connecting to database: {database_path}")
@@ -173,8 +180,14 @@ def main():
         required=True,
         help='path to config yaml file'
     )
+    parser.add_argument(
+        '--force',
+        action='store_true',
+        help='clear all cache files before running'
+    )
+    
     args = parser.parse_args()
-    run(args.config)
+    run(args.config, force=args.force)
 
 
 if __name__ == '__main__':
